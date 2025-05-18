@@ -1,0 +1,14 @@
+import numpy as np
+
+# Prepare data
+X = df[['feature1', 'feature2']].values
+y = df['target'].values.reshape(-1, 1)
+
+# Add intercept term
+X_b = np.c_[np.ones((X.shape[0], 1)), X]
+
+# Compute theta using Normal Equation
+theta = np.linalg.inv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)
+
+# Make predictions
+predictions = X_b.dot(theta)
