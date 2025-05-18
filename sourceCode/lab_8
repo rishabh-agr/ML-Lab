@@ -1,0 +1,76 @@
+import numpy as np
+import random
+
+# Reuse entropy and tree logic from previous Decision Tree implementation
+def entropy(y):
+    unique, counts = np.unique(y, return_counts=True)
+    probs = counts / len(y)
+    return -np.sum(probs * np.log2(probs + 1e-9))
+
+def information_gain(X_col, y, thresh):
+    left_mask = X_col <= thresh
+    right_mask = ~left_mask
+    if len(y[left_mask]) == 0 or len(y[right_mask]) == 0:
+        return 0
+    return entropy(y) - (len(y[left_mask]) / len(y)) * entropy(y[left_mask]) - (len(y[right_mask]) / len(y)) * entropy(y[right_mask])
+
+def best_split(X, y):
+    best_gain = -1
+    split = None
+    n_features = X.shape[1]
+    for feature_index in random.sample(range(n_features), int(np.sqrt(n_features))):
+        for threshold in np.unique(X[:, feature_index]):
+            gain = information_gain(X[:, feature_index], y, threshold)
+            if gain > best_gain:
+                best_gain = gain
+                split = (feature_index, threshold)
+    return split
+
+def build_tree(X, y, depth=0, max_depth=5):
+    if len(np.unique(y)) == 1 or depth >= max_depth:
+        return {'label': np.bincount(y).argmax()}
+    feat, thresh = best_split(X, y)
+    if feat is None:
+        return {'label': np.bincount(y).argmax()}
+    left_mask = X[:, feat] <= thresh
+    right_mask = ~left_mask
+    return {
+        'feature': feat,
+        'threshold': thresh,
+        'left': build_tree(X[left_mask], y[left_mask], depth+1, max_depth),
+        'right': build_tree(X[right_mask], y[right_mask], depth+1, max_depth)
+    }
+
+def predict_tree(tree, x):
+    if 'label' in tree:
+        return tree['label']
+    if x[tree['feature']] <= tree['threshold']:
+        return predict_tree(tree['left'], x)
+    return predict_tree(tree['right'], x)
+
+# Random Forest
+class RandomForest:
+    def __init__(self, n_trees=5, max_depth=5):
+        self.n_trees = n_trees
+        self.max_depth = max_depth
+        self.trees = []
+
+    def fit(self, X, y):
+        self.trees = []
+        for _ in range(self.n_trees):
+            idxs = np.random.choice(len(X), len(X), replace=True)
+            X_sample = X[idxs]
+            y_sample = y[idxs]
+            tree = build_tree(X_sample, y_sample, max_depth=self.max_depth)
+            self.trees.append(tree)
+
+    def predict(self, X):
+        tree_preds = np.array([[predict_tree(tree, x) for tree in self.trees] for x in X])
+        return [np.bincount(row).argmax() for row in tree_preds]
+
+# Example usage
+# X = df[['f1', 'f2']].values
+# y = df['target'].values
+# model = RandomForest()
+# model.fit(X, y)
+# preds = model.predict(X)
