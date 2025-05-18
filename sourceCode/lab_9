@@ -1,0 +1,53 @@
+import numpy as np
+
+class AdaBoost:
+    def __init__(self, n_clf=5):
+        self.n_clf = n_clf
+
+    def fit(self, X, y):
+        n = len(X)
+        w = np.ones(n) / n
+        self.models = []
+        self.alphas = []
+
+        for _ in range(self.n_clf):
+            stump = self._build_stump(X, y, w)
+            preds = stump['pred']
+            err = np.sum(w * (preds != y))
+            if err == 0:
+                break
+            alpha = 0.5 * np.log((1 - err) / (err + 1e-10))
+            w *= np.exp(-alpha * y * preds)
+            w /= np.sum(w)
+            self.models.append(stump)
+            self.alphas.append(alpha)
+
+    def _build_stump(self, X, y, w):
+        m, n = X.shape
+        best_stump = {}
+        best_pred = None
+        min_error = float('inf')
+        for feat in range(n):
+            thresholds = np.unique(X[:, feat])
+            for t in thresholds:
+                for polarity in [1, -1]:
+                    pred = np.ones(m)
+                    pred[polarity * X[:, feat] < polarity * t] = -1
+                    error = np.sum(w * (pred != y))
+                    if error < min_error:
+                        best_stump = {'feat': feat, 'thresh': t, 'polarity': polarity, 'pred': pred}
+                        min_error = error
+        return best_stump
+
+    def predict(self, X):
+        clf_preds = [alpha * np.where(clf['polarity'] * X[:, clf['feat']] >= clf['polarity'] * clf['thresh'], 1, -1)
+                     for clf, alpha in zip(self.models, self.alphas)]
+        return np.sign(np.sum(clf_preds, axis=0))
+
+# Example usage
+# X = df[['f1', 'f2']].values
+# y = df['target'].values
+# y = np.where(y == 1, 1, -1)  # convert to -1, +1
+# model = AdaBoost()
+# model.fit(X, y)
+# preds = model.predict(X)
