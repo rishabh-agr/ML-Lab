@@ -1,0 +1,57 @@
+import numpy as np
+
+# Function to calculate entropy
+def entropy(y):
+    unique, counts = np.unique(y, return_counts=True)
+    probabilities = counts / len(y)
+    return -np.sum(probabilities * np.log2(probabilities))
+
+# Function to calculate information gain
+def information_gain(X_column, y, threshold):
+    left_mask = X_column <= threshold
+    right_mask = ~left_mask
+    left_y, right_y = y[left_mask], y[right_mask]
+    return entropy(y) - (len(left_y) / len(y)) * entropy(left_y) - (len(right_y) / len(y)) * entropy(right_y)
+
+# Function to find the best split
+def best_split(X, y):
+    best_gain = -1
+    best_split = None
+    for feature_index in range(X.shape[1]):
+        thresholds = np.unique(X[:, feature_index])
+        for threshold in thresholds:
+            gain = information_gain(X[:, feature_index], y, threshold)
+            if gain > best_gain:
+                best_gain = gain
+                best_split = (feature_index, threshold)
+    return best_split
+
+# Function to build the tree
+def build_tree(X, y):
+    if len(np.unique(y)) == 1:
+        return {'label': np.unique(y)[0]}
+    feature_index, threshold = best_split(X, y)
+    left_mask = X[:, feature_index] <= threshold
+    right_mask = ~left_mask
+    left_tree = build_tree(X[left_mask], y[left_mask])
+    right_tree = build_tree(X[right_mask], y[right_mask])
+    return {'feature_index': feature_index, 'threshold': threshold, 'left': left_tree, 'right': right_tree}
+
+# Function to predict using the tree
+def predict_tree(tree, X):
+    if 'label' in tree:
+        return tree['label']
+    if X[tree['feature_index']] <= tree['threshold']:
+        return predict_tree(tree['left'], X)
+    else:
+        return predict_tree(tree['right'], X)
+
+# Prepare data
+X = df[['feature1', 'feature2']].values
+y = df['target'].values
+
+# Build the tree
+tree = build_tree(X, y)
+
+# Make predictions
+predictions = [predict_tree(tree, x) for x in X]
