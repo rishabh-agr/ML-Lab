@@ -1,0 +1,7 @@
+import pandas as pd
+
+# Import data
+df = pd.read_csv('data.csv')
+
+# Export data
+df.to_csv('processed_data.csv', index=False)
