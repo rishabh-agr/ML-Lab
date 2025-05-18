@@ -1,0 +1,14 @@
+# Handle missing values
+df.fillna(df.mean(), inplace=True)
+
+# Encode categorical variables using one-hot encoding
+df = pd.get_dummies(df, columns=['category_column'])
+
+# Normalize numerical features
+df['normalized'] = (df['numeric_column'] - df['numeric_column'].min()) / (df['numeric_column'].max() - df['numeric_column'].min())
+
+# Standardize numerical features
+df['standardized'] = (df['numeric_column'] - df['numeric_column'].mean()) / df['numeric_column'].std()
+
+# Feature scaling using Min-Max
+df['scaled'] = (df['numeric_column'] - df['numeric_column'].min()) / (df['numeric_column'].max() - df['numeric_column'].min())
