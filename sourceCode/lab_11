@@ -1,0 +1,20 @@
+import numpy as np
+import pandas as pd
+
+def pca(X, n_components):
+    # Standardize
+    X_meaned = X - np.mean(X, axis=0)
+    cov_mat = np.cov(X_meaned, rowvar=False)
+    eigen_vals, eigen_vecs = np.linalg.eigh(cov_mat)
+    # Sort eigenvalues
+    idxs = np.argsort(eigen_vals)[::-1]
+    eigen_vecs = eigen_vecs[:, idxs]
+    eigen_vals = eigen_vals[idxs]
+    # Select top components
+    eigen_vecs = eigen_vecs[:, :n_components]
+    return np.dot(X_meaned, eigen_vecs)
+
+# Example
+df = pd.read_csv("data.csv")
+X = df[['f1', 'f2', 'f3']].values
+X_pca = pca(X, n_components=2)
